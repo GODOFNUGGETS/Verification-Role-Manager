@@ -1,5 +1,4 @@
 import discord
-from discord.ext import commands
 from discord import Embed
 import os
 from dotenv import load_dotenv
@@ -13,10 +12,8 @@ LOG_CHANNEL_ID = int(os.getenv("LOG_CHANNEL_ID"))
 
 intents = discord.Intents.default()
 intents.members = True
-intents.message_content = True
 
-
-bot = commands.Bot(command_prefix="!", intents=intents)
+bot = discord.Client(intents=intents)
 
 @bot.event
 async def on_ready():
@@ -33,6 +30,7 @@ async def on_member_update(before: discord.Member, after: discord.Member):
         print("⚠️ One or both roles not found.")
         return
 
+    # When user gains Verified role
     if verified_role in after.roles and verified_role not in before.roles:
         if unverified_role in after.roles:
             try:
@@ -46,6 +44,26 @@ async def on_member_update(before: discord.Member, after: discord.Member):
                         color=discord.Color.green()
                     )
                     embed.add_field(name="Removed Role", value=UNVERIFIED_ROLE_NAME)
+                    await log_channel.send(embed=embed)
+            except discord.Forbidden:
+                print(f"🚫 Missing permissions for {after.name}.")
+            except Exception as e:
+                print(f"⚠️ Error: {e}")
+
+    # When user gains Unverified role while having Verified role
+    if unverified_role in after.roles and unverified_role not in before.roles:
+        if verified_role in after.roles:
+            try:
+                await after.remove_roles(verified_role, reason="User unverified")
+                print(f"🔁 {after.name} was unverified. Verified role removed.")
+
+                if log_channel:
+                    embed = Embed(
+                        title="User Unverified",
+                        description=f"{after.mention} has been unverified.",
+                        color=discord.Color.red()
+                    )
+                    embed.add_field(name="Removed Role", value=VERIFIED_ROLE_NAME)
                     await log_channel.send(embed=embed)
             except discord.Forbidden:
                 print(f"🚫 Missing permissions for {after.name}.")
