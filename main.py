@@ -13,6 +13,8 @@ LOG_CHANNEL_ID = int(os.getenv("LOG_CHANNEL_ID"))
 
 intents = discord.Intents.default()
 intents.members = True
+intents.message_content = True
+
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
